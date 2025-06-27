@@ -1,5 +1,6 @@
 import React from "react";
 import { Command } from "../types/terminal";
+import image from "../assets/prof-img.png";
 
 export const getInitialCommands = (): Command[] => {
   return [
@@ -10,7 +11,8 @@ export const getInitialCommands = (): Command[] => {
           <div className="flex items-start gap-6">
             <div className="w-32 h-32 border border-green-400 rounded overflow-hidden">
               <div className="w-full h-full bg-black/50 flex items-center justify-center text-green-400">
-                [PROFILE_IMG]
+                {/* [PROFILE_IMG] */}
+                <img src={image} alt="profile-image" />
               </div>
             </div>
 
