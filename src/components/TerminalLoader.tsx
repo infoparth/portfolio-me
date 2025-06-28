@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { audioManager } from "../utils/audioUtils";
 
 const TerminalLoader = () => {
@@ -6,18 +6,37 @@ const TerminalLoader = () => {
   const [progress, setProgress] = useState(0);
   const [displayText, setDisplayText] = useState("");
   const [loadingDots, setLoadingDots] = useState("");
+  const [showAudioPrompt, setShowAudioPrompt] = useState(true);
+  const [audioStarted, setAudioStarted] = useState(false);
+  const [loadingComplete, setLoadingComplete] = useState(false);
 
   const fullText = "Welcome to Parth's portfolio";
 
-  useEffect(() => {
-    // Initialize audio and play single siren sound
-    const initAudio = async () => {
-      await audioManager.initialize();
-      audioManager.createSirenSound(); // Single siren instead of loop
-    };
+  // Calculate remaining time based on progress
+  const getRemainingTime = () => {
+    const totalTime = 5; // 5 seconds total loading time
+    const remainingProgress = 100 - progress;
+    return (remainingProgress / 100) * totalTime;
+  };
 
-    initAudio();
-  }, []);
+  // Handle user interaction to start audio
+  const handleAudioEnable = async () => {
+    if (!audioStarted && !loadingComplete) {
+      await audioManager.initialize();
+
+      // Calculate remaining time and adjust sound duration
+      const remainingTime = getRemainingTime();
+      await audioManager.createSirenSound(remainingTime);
+
+      setAudioStarted(true);
+      setShowAudioPrompt(false);
+    }
+  };
+
+  // Dismiss audio prompt
+  const dismissAudioPrompt = () => {
+    setShowAudioPrompt(false);
+  };
 
   useEffect(() => {
     // Update time every second
@@ -55,18 +74,40 @@ const TerminalLoader = () => {
   }, []);
 
   useEffect(() => {
-    // Animate progress bar over 7 seconds
+    // Animate progress bar over 5 seconds
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(progressInterval);
+          setLoadingComplete(true);
+          setShowAudioPrompt(false); // Hide audio prompt when loading is complete
+
+          // Stop any playing siren sound when loading completes
+          audioManager.stopSirenSound();
+
           return 100;
         }
-        return prev + 100 / 50; // 100% over 5 seconds (50 steps of 100ms each)
+        return prev + 100 / 50;
       });
     }, 100);
 
     return () => clearInterval(progressInterval);
+  }, []);
+
+  // Auto-hide audio prompt after 10 seconds
+  useEffect(() => {
+    const autoHideTimer = setTimeout(() => {
+      setShowAudioPrompt(false);
+    }, 10000);
+
+    return () => clearTimeout(autoHideTimer);
+  }, []);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      audioManager.stopSirenSound();
+    };
   }, []);
 
   const formatTime = (date: Date) => {
@@ -104,6 +145,40 @@ const TerminalLoader = () => {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4 font-mono">
+      {/* Optional Audio Notification - Top Right */}
+      {showAudioPrompt && !loadingComplete && (
+        <div className="fixed top-4 right-4 z-50 max-w-xs">
+          <div className="bg-black/90 border border-green-400/50 rounded-lg p-3 backdrop-blur-sm">
+            <div className="flex items-start justify-between mb-2">
+              <div className="text-green-400 text-xs font-bold">🔊 AUDIO</div>
+              <button
+                onClick={dismissAudioPrompt}
+                className="text-green-400/60 hover:text-green-400 text-xs ml-2"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="text-green-400 text-xs mb-2">
+              Enable sound for full experience
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleAudioEnable}
+                className="bg-green-400/20 hover:bg-green-400/30 text-green-400 text-xs px-2 py-1 rounded border border-green-400/50 transition-colors"
+              >
+                Enable
+              </button>
+              <button
+                onClick={dismissAudioPrompt}
+                className="text-green-400/60 hover:text-green-400/80 text-xs px-2 py-1 transition-colors"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div
         className="terminal-container relative"
         style={{
@@ -123,16 +198,6 @@ const TerminalLoader = () => {
           {/* Glow effect */}
           <div className="absolute inset-0 bg-green-400/5 rounded-lg"></div>
           <div className="absolute inset-0 border-2 border-green-400/30 rounded-lg animate-pulse"></div>
-
-          {/* Flickering overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-0 animate-pulse"
-            style={{
-              background:
-                "linear-gradient(45deg, transparent 48%, rgba(34, 197, 94, 0.03) 50%, transparent 52%)",
-              animation: "flicker 3s infinite",
-            }}
-          ></div>
 
           {/* Content */}
           <div className="relative z-10">
@@ -192,18 +257,6 @@ const TerminalLoader = () => {
         {/* Outer glow effect */}
         <div className="absolute inset-0 bg-green-400/10 rounded-lg blur-xl scale-110 -z-10"></div>
       </div>
-
-      {/* Custom CSS for flicker animation */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          @keyframes flicker {
-            0%, 100% { opacity: 0; }
-            50% { opacity: 1; }
-          }
-        `,
-        }}
-      />
     </div>
   );
 };

@@ -7,12 +7,12 @@ export const executeLsCommand = (currentDirectory: string): React.ReactNode => {
     return (
       <div className="mt-2">
         <AnimatedText
-          text="╭─ DIRECTORY SCAN RESULTS ─╮
+          text={`╭─ DIRECTORY SCAN RESULTS ─╮
 📁 skills
 📁 projects  
 📁 experience
 📄 about.txt
-╰─ SCAN COMPLETE ─╯"
+╰─ SCAN COMPLETE ─╯`}
           className="text-green-400 whitespace-pre-line"
           speed={60}
         />

@@ -1,6 +1,7 @@
-export class AudioManager {
+class AudioManager {
   private audioContext: AudioContext | null = null;
   private isInitialized = false;
+  private currentSirenNodes: (OscillatorNode | GainNode)[] = [];
 
   async initialize() {
     if (this.isInitialized) return;
@@ -8,10 +9,114 @@ export class AudioManager {
     try {
       this.audioContext = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
+
+      if (this.audioContext.state === "suspended") {
+        await this.audioContext.resume();
+      }
+
       this.isInitialized = true;
     } catch (error) {
       console.warn("Audio initialization failed:", error);
     }
+  }
+
+  // Stop any currently playing siren sound
+  stopSirenSound() {
+    this.currentSirenNodes.forEach((node) => {
+      try {
+        if (node instanceof OscillatorNode) {
+          node.stop();
+        } else if (node instanceof GainNode) {
+          // Quickly fade out the gain
+          node.gain.cancelScheduledValues(this.audioContext!.currentTime);
+          node.gain.setValueAtTime(
+            node.gain.value,
+            this.audioContext!.currentTime
+          );
+          node.gain.linearRampToValueAtTime(
+            0,
+            this.audioContext!.currentTime + 0.1
+          );
+        }
+      } catch (error) {
+        // Node might already be stopped
+      }
+    });
+    this.currentSirenNodes = [];
+  }
+
+  async createSirenSound(remainingTime?: number) {
+    if (!this.audioContext) return;
+
+    if (this.audioContext.state === "suspended") {
+      try {
+        await this.audioContext.resume();
+      } catch (error) {
+        console.warn("Could not resume audio context:", error);
+        return;
+      }
+    }
+
+    // Stop any existing siren sound
+    this.stopSirenSound();
+
+    const oscillator1 = this.audioContext.createOscillator();
+    const oscillator2 = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    const filter = this.audioContext.createBiquadFilter();
+
+    // Keep track of nodes for potential stopping
+    this.currentSirenNodes = [oscillator1, oscillator2, gainNode];
+
+    oscillator1.connect(filter);
+    oscillator2.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+
+    oscillator1.type = "sine";
+    oscillator2.type = "triangle";
+
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(1000, this.audioContext.currentTime);
+    filter.Q.setValueAtTime(3, this.audioContext.currentTime);
+
+    const now = this.audioContext.currentTime;
+    // Use remaining time if provided, otherwise use full 4 seconds
+    // But cap it at a minimum of 0.5 seconds for a quick effect
+    const duration =
+      remainingTime !== undefined
+        ? Math.max(Math.min(remainingTime, 4), 0.5)
+        : 4;
+
+    oscillator1.frequency.setValueAtTime(300, now);
+    oscillator1.frequency.linearRampToValueAtTime(800, now + duration / 2);
+    oscillator1.frequency.linearRampToValueAtTime(300, now + duration);
+
+    oscillator2.frequency.setValueAtTime(800, now);
+    oscillator2.frequency.linearRampToValueAtTime(300, now + duration / 2);
+    oscillator2.frequency.linearRampToValueAtTime(800, now + duration);
+
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(
+      0.2,
+      now + Math.min(0.5, duration / 4)
+    );
+    gainNode.gain.setValueAtTime(
+      0.2,
+      now + duration - Math.min(0.5, duration / 4)
+    );
+    gainNode.gain.linearRampToValueAtTime(0, now + duration);
+
+    oscillator1.start(now);
+    oscillator1.stop(now + duration);
+
+    oscillator2.start(now);
+    oscillator2.stop(now + duration);
+
+    // Clean up nodes when they finish
+    setTimeout(() => {
+      this.currentSirenNodes = [];
+    }, duration * 1000 + 100);
   }
 
   createMechanicalKeySound() {
@@ -69,56 +174,6 @@ export class AudioManager {
 
     oscillator2.start(now);
     oscillator2.stop(now + 0.12);
-  }
-
-  createSirenSound() {
-    if (!this.audioContext) return;
-
-    // Create a single, continuous siren sound
-    const oscillator1 = this.audioContext.createOscillator();
-    const oscillator2 = this.audioContext.createOscillator();
-    const gainNode = this.audioContext.createGain();
-    const filter = this.audioContext.createBiquadFilter();
-
-    oscillator1.connect(filter);
-    oscillator2.connect(filter);
-    filter.connect(gainNode);
-    gainNode.connect(this.audioContext.destination);
-
-    // Siren frequencies with realistic wave forms
-    oscillator1.type = "sine";
-    oscillator2.type = "triangle";
-
-    // Bandpass filter for authentic siren sound
-    filter.type = "bandpass";
-    filter.frequency.setValueAtTime(1000, this.audioContext.currentTime);
-    filter.Q.setValueAtTime(3, this.audioContext.currentTime);
-
-    // Create continuous rising and falling siren pattern
-    const now = this.audioContext.currentTime;
-    const duration = 4; // Single continuous siren
-
-    // First oscillator - rising then falling frequency
-    oscillator1.frequency.setValueAtTime(300, now);
-    oscillator1.frequency.linearRampToValueAtTime(800, now + duration / 2);
-    oscillator1.frequency.linearRampToValueAtTime(300, now + duration);
-
-    // Second oscillator - creates the characteristic warbling effect
-    oscillator2.frequency.setValueAtTime(800, now);
-    oscillator2.frequency.linearRampToValueAtTime(300, now + duration / 2);
-    oscillator2.frequency.linearRampToValueAtTime(800, now + duration);
-
-    // Smooth volume control with fade in/out
-    gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.2, now + 0.5);
-    gainNode.gain.setValueAtTime(0.2, now + duration - 0.5);
-    gainNode.gain.linearRampToValueAtTime(0, now + duration);
-
-    oscillator1.start(now);
-    oscillator1.stop(now + duration);
-
-    oscillator2.start(now);
-    oscillator2.stop(now + duration);
   }
 }
 

@@ -89,8 +89,8 @@ export const getInitialCommands = (): Command[] => {
               </div> */}
               <div className="flex justify-center gap-4 text-sm">
                 <span>
-                  → Type: 'cat about.txt --full', or click on the button for
-                  complete details
+                  → Type: 'cat about.txt --full', or double click on the button
+                  for complete details
                 </span>
               </div>
             </div>
