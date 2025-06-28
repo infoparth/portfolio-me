@@ -1,5 +1,6 @@
 import React from "react";
 import image from "@/assets/prof-img.png";
+import OptimizedProfileImage from "../OptimizedImage";
 
 export const executeWhoamiCommand = (): React.ReactNode => {
   return (
@@ -7,11 +8,12 @@ export const executeWhoamiCommand = (): React.ReactNode => {
       <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
         <div className="w-24 h-24 sm:w-32 sm:h-32 border border-green-400 rounded overflow-hidden">
           <div className="w-full h-full bg-black/50 flex items-center justify-center text-green-400">
-            <img
+            {/* <img
               src={image}
               alt="profile-image"
               className="object-cover w-full h-full"
-            />
+            /> */}
+            <OptimizedProfileImage />
           </div>
         </div>
         <div className="flex-1">
