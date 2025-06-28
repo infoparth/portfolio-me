@@ -1,6 +1,6 @@
 import React from "react";
 import { Command } from "../types/terminal";
-import image from "../assets/prof-img.png";
+import image from "@/assets/prof-img.png";
 
 export const getInitialCommands = (): Command[] => {
   return [
