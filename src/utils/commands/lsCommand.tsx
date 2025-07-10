@@ -124,7 +124,7 @@ data ownership for easy conversion and listing on marketplaces."
 
           <div className="border border-green-500 rounded p-4 bg-black/20">
             <div className="text-green-300 text-lg font-bold mb-2">
-              📁 SolCycle
+              📁 VesToken
             </div>
             <div className="text-green-400 text-sm mb-2">
               Type: Personal Project
@@ -157,7 +157,7 @@ data ownership for easy conversion and listing on marketplaces."
                 [Live Demo]
               </a> */}
               <a
-                href="https://github.com/infoparth/solcycle"
+                href="https://github.com/infoparth/token_buy_repo"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-cyan-400 hover:text-cyan-300 underline"
@@ -176,7 +176,7 @@ data ownership for easy conversion and listing on marketplaces."
             </div>
             <div className="text-green-400 text-sm mb-3">
               <AnimatedText
-                text="Lightweight blockchain inspired by bitcoin architecture written in Golang, exploring blockchain development for new developers."
+                text="Lightweight blockchain architecture written in Golang, exploring blockchain development for new developers."
                 speed={40}
               />
             </div>
